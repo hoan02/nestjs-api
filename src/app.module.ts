@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { CategoryModule } from './modules/category/category.module';
 import { ProductModule } from './modules/product/product.module';
+import { UserModule } from './modules/user/user.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 
 @Module({
@@ -18,6 +19,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
     DatabaseModule,
     CategoryModule,
     ProductModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
