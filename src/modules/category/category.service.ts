@@ -27,7 +27,10 @@ export class CategoryService {
     return category;
   }
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
+  async update(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
     const category = await this.categoryModel.findByIdAndUpdate(
       id,
       updateCategoryDto,
@@ -36,6 +39,8 @@ export class CategoryService {
     if (!category) {
       throw new NotFoundException(`Category with ID ${id} not found`);
     }
+
+    // await new Promise<void>((resolve) => setTimeout(resolve, 3000));
     return category;
   }
 

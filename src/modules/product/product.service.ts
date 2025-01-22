@@ -27,13 +27,18 @@ export class ProductService {
     return product;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto): Promise<Product> {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
     const product = await this.productModel
       .findByIdAndUpdate(id, updateProductDto, { new: true })
       .populate('categoryId');
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
+
+    // await new Promise<void>((resolve) => setTimeout(resolve, 3000));
     return product;
   }
 

@@ -12,4 +12,4 @@ export class Category {
   description: string;
 }
 
-export const CategorySchema = SchemaFactory.createForClass(Category);
+export const categorySchema = SchemaFactory.createForClass(Category);
