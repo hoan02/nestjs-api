@@ -13,8 +13,9 @@ export class UserService {
     return user.save();
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().exec();
+  async findAll(page: number, limit: number): Promise<User[]> {
+    const skip = (page - 1) * limit;
+    return this.userModel.find().skip(skip).limit(limit).exec();
   }
 
   async findOne(id: string): Promise<User> {
