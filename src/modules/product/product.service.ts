@@ -15,8 +15,14 @@ export class ProductService {
     return product.save();
   }
 
-  async findAll(): Promise<Product[]> {
-    return this.productModel.find().populate('categoryId').exec();
+  async findAll(page: number, limit: number): Promise<Product[]> {
+    const skip = (page - 1) * limit;
+    return this.productModel
+      .find()
+      .populate('categoryId')
+      .skip(skip)
+      .limit(limit)
+      .exec();
   }
 
   async findOne(id: string): Promise<Product> {

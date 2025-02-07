@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from 'src/schemas/user';
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
+import { UserTableDto } from './_dto/user-table.dto';
 
 @Injectable()
 export class UserService {
@@ -13,9 +14,20 @@ export class UserService {
     return user.save();
   }
 
-  async findAll(page: number, limit: number): Promise<User[]> {
+  async findAll(page: number, limit: number): Promise<UserTableDto> {
     const skip = (page - 1) * limit;
-    return this.userModel.find().skip(skip).limit(limit).exec();
+
+    const [users, total] = await Promise.all([
+      this.userModel.find().skip(skip).limit(limit).exec(),
+      this.userModel.countDocuments().exec(),
+    ]);
+
+    const usersWithPosition = users.map((user, index) => ({
+      ...user.toObject(),
+      position: skip + index + 1,
+    }));
+
+    return new UserTableDto(usersWithPosition, page, limit, total);
   }
 
   async findOne(id: string): Promise<User> {

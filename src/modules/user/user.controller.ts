@@ -15,6 +15,7 @@ import {
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
 import { UserService } from './user.service';
 import { User } from 'src/schemas/user';
+import { UserTableDto } from './_dto/user-table.dto';
 
 @Controller('users')
 export class UserController {
@@ -29,10 +30,10 @@ export class UserController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  findAll(
+  async findAll(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ): Promise<User[]> {
+    @Query('limit') limit: number = 50,
+  ): Promise<UserTableDto> {
     return this.userService.findAll(page, limit);
   }
 
