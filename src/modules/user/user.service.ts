@@ -1,17 +1,29 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from 'src/schemas/user';
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
 import { UserTableDto } from './_dto/user-table.dto';
+import { LoginUserDto, UserResponseDto } from './_dto/auth.dto';
 
 @Injectable()
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = new this.userModel(createUserDto);
-    return user.save();
+  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
+    const userDoc = await new this.userModel(createUserDto).save();
+    const user = userDoc as UserDocument;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      status: user.status,
+      phoneNumber: user.phoneNumber,
+    };
   }
 
   async findAll(page: number, limit: number): Promise<UserTableDto> {
@@ -27,25 +39,48 @@ export class UserService {
       position: skip + index + 1,
     }));
 
+    // await new Promise<void>((resolve) => setTimeout(resolve, 3000));
     return new UserTableDto(usersWithPosition, page, limit, total);
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.userModel.findById(id).exec();
-    if (!user) {
+  async findOne(id: string): Promise<UserResponseDto> {
+    const userDoc = await this.userModel.findById(id).exec();
+    if (!userDoc) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return user;
+    const user = userDoc as UserDocument;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      status: user.status,
+      phoneNumber: user.phoneNumber,
+    };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.userModel
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+    const userDoc = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
-    if (!user) {
+    if (!userDoc) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return user;
+    const user = userDoc as UserDocument;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      status: user.status,
+      phoneNumber: user.phoneNumber,
+    };
   }
 
   async delete(id: string): Promise<void> {
@@ -63,5 +98,43 @@ export class UserService {
   async checkEmail(email: string): Promise<boolean> {
     const user = await this.userModel.findOne({ email }).exec();
     return !!user;
+  }
+
+  async login(loginUserDto: LoginUserDto): Promise<UserResponseDto> {
+    const user = await this.userModel.findOne({ email: loginUserDto.email }).exec() as UserDocument;
+    
+    if (!user || user.password !== loginUserDto.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      status: user.status,
+      phoneNumber: user.phoneNumber,
+    };
+  }
+
+  async getCurrentUser(userId: string): Promise<UserResponseDto> {
+    const user = await this.findOne(userId) as UserDocument;
+    
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      status: user.status,
+      phoneNumber: user.phoneNumber,
+    };
+  }
+
+  async logout(): Promise<{ message: string }> {
+    return { message: 'Successfully logged out' };
   }
 }

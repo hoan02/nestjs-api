@@ -13,22 +13,55 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
+import { LoginUserDto, LoginUserRequestDto, NewUserRequestDto, UserResponseDto } from './_dto/auth.dto';
 import { UserService } from './user.service';
-import { User } from 'src/schemas/user';
 import { UserTableDto } from './_dto/user-table.dto';
 
-@Controller('users')
+@Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
+  @Post('users')
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.userService.create(createUserDto);
+  register(@Body() body: NewUserRequestDto): Promise<UserResponseDto> {
+    return this.userService.create(body.user);
   }
 
-  @Get()
+  @Post('users/login')
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() body: LoginUserRequestDto): Promise<{ user: UserResponseDto }> {
+    const user = await this.userService.login(body.user);
+    return { user };
+  }
+
+  @Post('users/logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(): Promise<{ message: string }> {
+    return this.userService.logout();
+  }
+
+  @Get('user')
+  @HttpCode(HttpStatus.OK)
+  async getCurrentUser(): Promise<{ user: UserResponseDto }> {
+    // TODO: Get userId from JWT token
+    const userId = '123'; // Temporary hardcoded for testing
+    const user = await this.userService.getCurrentUser(userId);
+    return { user };
+  }
+
+  @Put('user')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @HttpCode(HttpStatus.OK)
+  async updateCurrentUser(@Body() body: { user: UpdateUserDto }): Promise<{ user: UserResponseDto }> {
+    // TODO: Get userId from JWT token
+    const userId = '123'; // Temporary hardcoded for testing
+    const user = await this.userService.update(userId, body.user);
+    return { user };
+  }
+
+  // Admin endpoints
+  @Get('users')
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query('page') page: number = 1,
@@ -37,37 +70,37 @@ export class UserController {
     return this.userService.findAll(page, limit);
   }
 
-  @Get('check-username')
+  @Get('users/check-username')
   @HttpCode(HttpStatus.OK)
   checkUsername(@Query('username') username: string): Promise<boolean> {
     return this.userService.checkUsername(username);
   }
 
-  @Get('check-email')
+  @Get('users/check-email')
   @HttpCode(HttpStatus.OK)
   checkEmail(@Query('email') email: string): Promise<boolean> {
     return this.userService.checkEmail(email);
   }
 
-  @Get(':id')
+  @Get('users/:id')
   @HttpCode(HttpStatus.OK)
-  findOne(@Param('id') id: string): Promise<User> {
+  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
 
-  @Put(':id')
+  @Put('users/:id')
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.OK)
-  update(
+  async adminUpdate(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
+  ): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete('users/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id') id: string): Promise<void> {
     return this.userService.delete(id);
   }
 }
