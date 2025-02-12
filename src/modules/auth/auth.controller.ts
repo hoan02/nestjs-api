@@ -8,7 +8,10 @@ import {
   UseGuards,
   Headers,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import {
   LoginUserDto,
@@ -20,7 +23,11 @@ import { Request } from 'express';
 
 @Controller()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post('auth/register')
   @HttpCode(HttpStatus.OK)
@@ -37,8 +44,12 @@ export class AuthController {
   @Post('auth/logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async logout(@Body() body: RefreshTokenDto): Promise<{ message: string }> {
-    await this.authService.logout(body.refreshToken);
+  async logout(@Req() req: Request): Promise<{ message: string }> {
+    const refreshToken = req.cookies['refreshToken'];
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+    await this.authService.logout(refreshToken, req);
     return { message: 'Successfully logged out' };
   }
 
@@ -47,10 +58,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logoutAll(
     @Headers('authorization') auth: string,
+    @Req() req: Request,
   ): Promise<{ message: string }> {
     const token = auth?.split(' ')[1];
-    const payload = await this.authService.getCurrentUser(token);
-    await this.authService.logoutAll(payload.data.user.id);
+    const decoded = this.jwtService.verify(token);
+    await this.authService.logoutAll(decoded.id, req);
     return { message: 'Successfully logged out from all devices' };
   }
 
@@ -59,13 +71,28 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async getCurrentUser(@Headers('authorization') auth: string) {
     const token = auth?.split(' ')[1];
-    return this.authService.getCurrentUser(token);
+    const decoded = this.jwtService.verify(token);
+    const user = await this.userService.findOne(decoded.id);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return {
+      message: 'Get user success',
+      result: true,
+      data: {
+        user,
+      },
+    };
   }
 
   @Post('auth/refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() body: RefreshTokenDto, @Req() req: Request) {
-    return await this.authService.refresh(body.refreshToken, req);
+  async refresh(@Req() req: Request) {
+    const refreshToken = req.cookies['refreshToken'];
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+    return await this.authService.refresh(refreshToken, req);
   }
 
   @Get('auth/sessions')
@@ -73,7 +100,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async getActiveSessions(@Headers('authorization') auth: string) {
     const token = auth?.split(' ')[1];
-    const payload = await this.authService.getCurrentUser(token);
-    return this.authService.getActiveSessions(payload.data.user.id);
+    const decoded = this.jwtService.verify(token);
+    const user = await this.userService.findOne(decoded.id);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return this.authService.getActiveSessions(user.id);
   }
 }

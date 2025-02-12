@@ -57,8 +57,18 @@ export class AuthService {
       user.id.toString(),
       refreshToken,
       this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC'),
-      req
+      req,
     );
+
+    // Thiết lập refresh token dưới dạng cookie
+    req.res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      // secure: process.env.NODE_ENV === 'production', // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
+      secure: false, // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
+      sameSite: 'none', // Cho phép cookie hoạt động với các domain khác nhau
+      maxAge:
+        this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000, // Thời gian sống của cookie
+    });
 
     return {
       message: 'Login Success',
@@ -66,29 +76,8 @@ export class AuthService {
       data: {
         user,
         accessToken,
-        refreshToken,
       },
     };
-  }
-
-  async getCurrentUser(token: string) {
-    try {
-      const payload = this.jwtService.verify(token);
-      const user = await this.userService.findOne(payload.id);
-      if (!user) {
-        throw new UnauthorizedException();
-      }
-
-      return {
-        message: 'Get user success',
-        result: true,
-        data: {
-          user,
-        },
-      };
-    } catch {
-      throw new UnauthorizedException();
-    }
   }
 
   async register(value: RegisterUserDto, req: Request) {
@@ -99,7 +88,9 @@ export class AuthService {
     }
 
     // Check if username already exists
-    const existingUsername = await this.userService.checkUsername(value.username);
+    const existingUsername = await this.userService.checkUsername(
+      value.username,
+    );
     if (existingUsername) {
       throw new UnauthorizedException('Username already exists');
     }
@@ -123,8 +114,16 @@ export class AuthService {
       user.id.toString(),
       refreshToken,
       this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC'),
-      req
+      req,
     );
+
+    // Thiết lập refresh token dưới dạng cookie
+    req.res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
+      maxAge:
+        this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000, // Thời gian sống của cookie
+    });
 
     return {
       message: 'Register Success',
@@ -132,7 +131,6 @@ export class AuthService {
       data: {
         user,
         accessToken,
-        refreshToken,
       },
     };
   }
@@ -140,7 +138,8 @@ export class AuthService {
   async refresh(refreshToken: string, req: Request) {
     try {
       // Kiểm tra refresh token có tồn tại và hợp lệ trong database không
-      const storedToken = await this.refreshTokenService.findByToken(refreshToken);
+      const storedToken =
+        await this.refreshTokenService.findByToken(refreshToken);
       if (!storedToken || !storedToken.isValid) {
         throw new UnauthorizedException('Invalid refresh token');
       }
@@ -159,6 +158,14 @@ export class AuthService {
       // Cập nhật thời gian sử dụng cuối cùng của refresh token
       await this.refreshTokenService.updateLastUsed(refreshToken);
 
+      // Thiết lập refresh token mới dưới dạng cookie
+      req.res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
+        maxAge:
+          this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000, // Thời gian sống của cookie
+      });
+
       return {
         message: 'Refresh token success',
         result: true,
@@ -171,16 +178,21 @@ export class AuthService {
     }
   }
 
-  async logout(refreshToken: string): Promise<void> {
+  async logout(refreshToken: string, req: Request): Promise<void> {
     await this.refreshTokenService.invalidateToken(refreshToken);
+    // Xóa cookie refreshToken
+    req.res.clearCookie('refreshToken');
   }
 
-  async logoutAll(userId: string): Promise<void> {
+  async logoutAll(userId: string, req: Request): Promise<void> {
     await this.refreshTokenService.invalidateAllUserTokens(userId);
+    // Xóa cookie refreshToken
+    req.res.clearCookie('refreshToken');
   }
 
   async getActiveSessions(userId: string) {
-    const sessions = await this.refreshTokenService.getUserActiveSessions(userId);
+    const sessions =
+      await this.refreshTokenService.getUserActiveSessions(userId);
     return {
       message: 'Get active sessions success',
       result: true,
