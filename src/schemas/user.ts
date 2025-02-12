@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
+import { RefreshToken } from './refresh-token';
 
 export type UserDocument = User & Document;
 
@@ -28,6 +29,9 @@ export class User {
 
   @Prop()
   phoneNumber?: string;
+
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'RefreshToken' }] })
+  refreshTokens: RefreshToken[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
