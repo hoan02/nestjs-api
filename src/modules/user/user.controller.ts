@@ -11,57 +11,42 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+  Request
 } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
-import { LoginUserDto, LoginUserRequestDto, NewUserRequestDto, UserResponseDto } from './_dto/auth.dto';
+import { UserResponseDto } from '../auth/_dto/auth.dto';
 import { UserService } from './user.service';
 import { UserTableDto } from './_dto/user-table.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UserDocument } from 'src/schemas/user';
 
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+
   @Post('users')
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.CREATED)
-  register(@Body() body: NewUserRequestDto): Promise<UserResponseDto> {
-    return this.userService.create(body.user);
-  }
-
-  @Post('users/login')
-  @HttpCode(HttpStatus.OK)
-  async login(@Body() body: LoginUserRequestDto): Promise<{ user: UserResponseDto }> {
-    const user = await this.userService.login(body.user);
-    return { user };
-  }
-
-  @Post('users/logout')
-  @HttpCode(HttpStatus.OK)
-  async logout(): Promise<{ message: string }> {
-    return this.userService.logout();
-  }
-
-  @Get('user')
-  @HttpCode(HttpStatus.OK)
-  async getCurrentUser(): Promise<{ user: UserResponseDto }> {
-    // TODO: Get userId from JWT token
-    const userId = '123'; // Temporary hardcoded for testing
-    const user = await this.userService.getCurrentUser(userId);
-    return { user };
+  async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
+    return this.userService.create(createUserDto);
   }
 
   @Put('user')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.OK)
-  async updateCurrentUser(@Body() body: { user: UpdateUserDto }): Promise<{ user: UserResponseDto }> {
-    // TODO: Get userId from JWT token
-    const userId = '123'; // Temporary hardcoded for testing
-    const user = await this.userService.update(userId, body.user);
-    return { user };
+  async updateCurrentUser(
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto
+  ): Promise<UserResponseDto> {
+    return this.userService.update(req.user.id, updateUserDto);
   }
 
   // Admin endpoints
   @Get('users')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query('page') page: number = 1,
@@ -83,12 +68,14 @@ export class UserController {
   }
 
   @Get('users/:id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
 
   @Put('users/:id')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.OK)
   async adminUpdate(
@@ -99,6 +86,7 @@ export class UserController {
   }
 
   @Delete('users/:id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     return this.userService.delete(id);

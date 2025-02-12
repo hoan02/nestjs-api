@@ -9,17 +9,17 @@ export class CreateUserDto {
   @IsString()
   password: string;
 
-  @IsOptional()
-  @IsString()
-  fullName?: string;
-
   @IsNotEmpty()
   @IsEmail()
   email: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
+  @IsOptional()
   @IsEnum(['user', 'admin', 'moderator'])
-  role: string;
+  role?: string;
 
   @IsOptional()
   @IsString()

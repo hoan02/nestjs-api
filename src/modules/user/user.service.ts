@@ -1,19 +1,36 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument } from 'src/schemas/user';
+import * as bcrypt from 'bcrypt';
+import { User, UserDocument } from '../../schemas/user';
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
 import { UserTableDto } from './_dto/user-table.dto';
-import { LoginUserDto, UserResponseDto } from './_dto/auth.dto';
+import { LoginUserDto, UserResponseDto } from '../auth/_dto/auth.dto';
 
 @Injectable()
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const userDoc = await new this.userModel(createUserDto).save();
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  async create(userData: CreateUserDto): Promise<UserResponseDto> {
+    // Hash password before saving
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(userData.password, salt);
+
+    const userDoc = await new this.userModel({
+      ...userData,
+      password: hashedPassword,
+    }).save();
+
     const user = userDoc as UserDocument;
-    
+
     return {
       id: user.id,
       email: user.email,
@@ -39,7 +56,6 @@ export class UserService {
       position: skip + index + 1,
     }));
 
-    // await new Promise<void>((resolve) => setTimeout(resolve, 3000));
     return new UserTableDto(usersWithPosition, page, limit, total);
   }
 
@@ -49,7 +65,7 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     const user = userDoc as UserDocument;
-    
+
     return {
       id: user.id,
       email: user.email,
@@ -62,7 +78,16 @@ export class UserService {
     };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    // If password is being updated, hash it
+    if (updateUserDto.password) {
+      const salt = await bcrypt.genSalt();
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, salt);
+    }
+
     const userDoc = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
@@ -70,7 +95,7 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     const user = userDoc as UserDocument;
-    
+
     return {
       id: user.id,
       email: user.email,
@@ -91,7 +116,7 @@ export class UserService {
   }
 
   async checkUsername(username: string): Promise<boolean> {
-    const user = await this.userModel.findOne({ username: username }).exec();
+    const user = await this.userModel.findOne({ username }).exec();
     return !!user;
   }
 
@@ -101,9 +126,14 @@ export class UserService {
   }
 
   async login(loginUserDto: LoginUserDto): Promise<UserResponseDto> {
-    const user = await this.userModel.findOne({ email: loginUserDto.email }).exec() as UserDocument;
-    
-    if (!user || user.password !== loginUserDto.password) {
+    const user = (await this.userModel
+      .findOne({ email: loginUserDto.email })
+      .exec()) as UserDocument;
+
+    if (
+      !user ||
+      !(await bcrypt.compare(loginUserDto.password, user.password))
+    ) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -117,24 +147,5 @@ export class UserService {
       status: user.status,
       phoneNumber: user.phoneNumber,
     };
-  }
-
-  async getCurrentUser(userId: string): Promise<UserResponseDto> {
-    const user = await this.findOne(userId) as UserDocument;
-    
-    return {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      fullName: user.fullName,
-      role: user.role,
-      profilePicture: user.profilePicture,
-      status: user.status,
-      phoneNumber: user.phoneNumber,
-    };
-  }
-
-  async logout(): Promise<{ message: string }> {
-    return { message: 'Successfully logged out' };
   }
 }
