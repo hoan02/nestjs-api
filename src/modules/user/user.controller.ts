@@ -18,7 +18,7 @@ import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
 import { UserResponseDto } from '../auth/_dto/auth.dto';
 import { UserService } from './user.service';
 import { UserTableDto } from './_dto/user-table.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Auth } from '../auth/decorators/auth.decorator';
 
 @Controller()
 export class UserController {
@@ -33,7 +33,7 @@ export class UserController {
   }
 
   @Put('user')
-  @UseGuards(JwtAuthGuard)
+  @Auth()
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.OK)
   async updateCurrentUser(
@@ -45,7 +45,7 @@ export class UserController {
 
   // Admin endpoints
   @Get('users')
-  @UseGuards(JwtAuthGuard)
+  @Auth('admin')
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query('page') page: number = 1,
@@ -67,14 +67,14 @@ export class UserController {
   }
 
   @Get('users/:id')
-  @UseGuards(JwtAuthGuard)
+  @Auth('admin')
   @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
 
   @Put('users/:id')
-  @UseGuards(JwtAuthGuard)
+  @Auth('admin')
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.OK)
   async adminUpdate(
@@ -85,7 +85,7 @@ export class UserController {
   }
 
   @Delete('users/:id')
-  @UseGuards(JwtAuthGuard)
+  @Auth('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
     return this.userService.delete(id);

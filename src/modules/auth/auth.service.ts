@@ -42,7 +42,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { email: user.email, id: user.id };
+    const payload = { email: user.email, id: user.id, role: user.role };
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRATION'),
@@ -63,11 +63,10 @@ export class AuthService {
     // Thiết lập refresh token dưới dạng cookie
     req.res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === 'production', // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
-      secure: true, // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
-      sameSite: 'none', // Cho phép cookie hoạt động với các domain khác nhau
+      secure: true,
+      sameSite: 'none',
       maxAge:
-        this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000, // Thời gian sống của cookie
+        this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000,
     });
 
     return {
@@ -99,7 +98,7 @@ export class AuthService {
     const user = await this.userService.create(value);
 
     // Generate tokens
-    const payload = { email: user.email, id: user.id };
+    const payload = { email: user.email, id: user.id, role: user.role };
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRATION'),
@@ -120,9 +119,9 @@ export class AuthService {
     // Thiết lập refresh token dưới dạng cookie
     req.res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
+      secure: process.env.NODE_ENV === 'production',
       maxAge:
-        this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000, // Thời gian sống của cookie
+        this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000,
     });
 
     return {
@@ -150,7 +149,7 @@ export class AuthService {
         throw new UnauthorizedException('User not found');
       }
 
-      const newPayload = { email: user.email, id: user.id };
+      const newPayload = { email: user.email, id: user.id, role: user.role };
       const accessToken = this.jwtService.sign(newPayload, {
         expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRATION'),
       });
@@ -161,9 +160,9 @@ export class AuthService {
       // Thiết lập refresh token mới dưới dạng cookie
       req.res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
+        secure: process.env.NODE_ENV === 'production',
         maxAge:
-          this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000, // Thời gian sống của cookie
+          this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000,
       });
 
       return {

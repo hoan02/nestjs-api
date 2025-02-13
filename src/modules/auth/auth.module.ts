@@ -23,7 +23,10 @@ import { AuthController } from './auth.controller';
     ConfigModule,
     RefreshTokenModule,
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService, 
+    JwtStrategy
+  ],
   controllers: [AuthController],
   exports: [AuthService],
 })

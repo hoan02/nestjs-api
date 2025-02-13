@@ -22,7 +22,7 @@ export class UserResponseDto {
   email: string;
   username: string;
   fullName?: string;
-  role?: string;
+  role: string; // Removed optional marker
   profilePicture?: string;
   status?: string;
   phoneNumber?: string;

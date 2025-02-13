@@ -5,17 +5,20 @@ import {
   RefreshToken,
   RefreshTokenDocument,
 } from '../../schemas/refresh-token';
+import { User, UserDocument } from '../../schemas/user';
 import { Request } from 'express';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { UAParser } from 'ua-parser-js';
 
-const MAX_ACTIVE_SESSIONS = 5; // Giới hạn số phiên đăng nhập đồng thời
+const MAX_ACTIVE_SESSIONS = 2; // Giới hạn số phiên đăng nhập đồng thời
 
 @Injectable()
 export class RefreshTokenService {
   constructor(
     @InjectModel(RefreshToken.name)
     private refreshTokenModel: Model<RefreshTokenDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
   ) {}
 
   private getDeviceInfo(req: Request): any {
@@ -63,7 +66,16 @@ export class RefreshTokenService {
       lastUsedAt: new Date(),
     });
 
-    return refreshToken.save();
+    const savedToken = await refreshToken.save();
+    
+    // Cập nhật reference trong User model
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      { $push: { refreshTokens: savedToken._id } },
+      { new: true }
+    );
+
+    return savedToken;
   }
 
   async findByToken(token: string): Promise<RefreshToken | null> {
@@ -71,15 +83,37 @@ export class RefreshTokenService {
   }
 
   async invalidateToken(token: string): Promise<void> {
+    const refreshToken = await this.refreshTokenModel.findOne({ token }).exec();
+    if (!refreshToken) return;
+
+    // Cập nhật trạng thái token
     await this.refreshTokenModel
       .updateOne({ token }, { isValid: false })
       .exec();
+
+    // Xóa reference trong User model
+    await this.userModel.findByIdAndUpdate(
+      refreshToken.userId,
+      { $pull: { refreshTokens: refreshToken._id } }
+    );
   }
 
   async invalidateAllUserTokens(userId: string): Promise<void> {
+    // Lấy tất cả token của user
+    const tokens = await this.refreshTokenModel
+      .find({ userId })
+      .exec();
+
+    // Cập nhật trạng thái các token
     await this.refreshTokenModel
       .updateMany({ userId }, { isValid: false })
       .exec();
+
+    // Xóa tất cả reference trong User model
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: { refreshTokens: [] } }
+    );
   }
 
   async getUserActiveSessions(userId: string): Promise<RefreshToken[]> {
@@ -127,7 +161,6 @@ export class RefreshTokenService {
       browserVersion: deviceInfo.browserVersion,
       ip: deviceInfo.ip,
       lastUsedAt: session.lastUsedAt,
-      // createdAt: session.createdAt,
     };
   }
 }
