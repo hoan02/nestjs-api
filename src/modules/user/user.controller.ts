@@ -19,7 +19,6 @@ import { UserResponseDto } from '../auth/_dto/auth.dto';
 import { UserService } from './user.service';
 import { UserTableDto } from './_dto/user-table.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UserDocument } from 'src/schemas/user';
 
 @Controller()
 export class UserController {

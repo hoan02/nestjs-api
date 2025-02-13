@@ -13,11 +13,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
-import {
-  LoginUserDto,
-  RefreshTokenDto,
-  RegisterUserDto,
-} from './_dto/auth.dto';
+import { LoginUserDto, RegisterUserDto } from './_dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Request } from 'express';
 
@@ -85,7 +81,7 @@ export class AuthController {
     };
   }
 
-  @Post('auth/refresh')
+  @Get('auth/refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Req() req: Request) {
     const refreshToken = req.cookies['refreshToken'];

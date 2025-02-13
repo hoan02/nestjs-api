@@ -64,7 +64,7 @@ export class AuthService {
     req.res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       // secure: process.env.NODE_ENV === 'production', // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
-      secure: false, // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
+      secure: true, // Chỉ sử dụng cookie an toàn trong môi trường sản xuất
       sameSite: 'none', // Cho phép cookie hoạt động với các domain khác nhau
       maxAge:
         this.configService.get<number>('REFRESH_TOKEN_EXPIRATION_SEC') * 1000, // Thời gian sống của cookie

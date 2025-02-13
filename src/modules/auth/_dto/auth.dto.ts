@@ -62,9 +62,3 @@ export class RegisterUserDto {
   @IsString()
   phoneNumber?: string;
 }
-
-export class RefreshTokenDto {
-  @IsNotEmpty()
-  @IsString()
-  refreshToken: string;
-}
