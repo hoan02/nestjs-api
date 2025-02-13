@@ -9,6 +9,7 @@ import {
   Headers,
   Req,
   UnauthorizedException,
+  Query,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
@@ -102,5 +103,29 @@ export class AuthController {
       throw new UnauthorizedException('User not found');
     }
     return this.authService.getActiveSessions(user.id);
+  }
+
+  @Get('auth/check-username')
+  @HttpCode(HttpStatus.OK)
+  async checkUsername(@Query('username') username: string) {
+    const exists = await this.userService.checkUsername(username);
+    return {
+      result: true,
+      data: {
+        exists
+      }
+    };
+  }
+
+  @Get('auth/check-email') 
+  @HttpCode(HttpStatus.OK)
+  async checkEmail(@Query('email') email: string) {
+    const exists = await this.userService.checkEmail(email);
+    return {
+      result: true,
+      data: {
+        exists
+      }
+    };
   }
 }

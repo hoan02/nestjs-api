@@ -54,17 +54,6 @@ export class UserController {
     return this.userService.findAll(page, limit);
   }
 
-  @Get('users/check-username')
-  @HttpCode(HttpStatus.OK)
-  checkUsername(@Query('username') username: string): Promise<boolean> {
-    return this.userService.checkUsername(username);
-  }
-
-  @Get('users/check-email')
-  @HttpCode(HttpStatus.OK)
-  checkEmail(@Query('email') email: string): Promise<boolean> {
-    return this.userService.checkEmail(email);
-  }
 
   @Get('users/:id')
   @Auth('admin')
