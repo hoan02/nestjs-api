@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Category, CategoryDocument } from 'src/schemas/category';
 import { CreateCategoryDto, UpdateCategoryDto } from './_dto/category.dto';
+import { CategoryTableDto } from './_dto/category-table.dto';
 
 @Injectable()
 export class CategoryService {
@@ -15,8 +16,19 @@ export class CategoryService {
     return category.save();
   }
 
-  async findAll(): Promise<Category[]> {
-    return this.categoryModel.find().exec();
+  async findAll(page: number = 1, limit: number = 10): Promise<CategoryTableDto> {
+    const skip = (page - 1) * limit;
+
+    const [categories, total] = await Promise.all([
+      this.categoryModel
+        .find()
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.categoryModel.countDocuments().exec(),
+    ]);
+
+    return new CategoryTableDto(categories, page, limit, total);
   }
 
   async findOne(id: string): Promise<Category> {

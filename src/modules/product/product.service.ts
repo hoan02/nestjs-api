@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from 'src/schemas/product';
 import { CreateProductDto, UpdateProductDto } from './_dto/product.dto';
+import { ProductTableDto } from './_dto/product-table.dto';
 
 @Injectable()
 export class ProductService {
@@ -15,14 +16,20 @@ export class ProductService {
     return product.save();
   }
 
-  async findAll(page: number, limit: number): Promise<Product[]> {
+  async findAll(page: number, limit: number): Promise<ProductTableDto> {
     const skip = (page - 1) * limit;
-    return this.productModel
-      .find()
-      .populate('categoryId')
-      .skip(skip)
-      .limit(limit)
-      .exec();
+
+    const [products, total] = await Promise.all([
+      this.productModel
+        .find()
+        .populate('categoryId')
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.productModel.countDocuments().exec(),
+    ]);
+
+    return new ProductTableDto(products, page, limit, total);
   }
 
   async findOne(id: string): Promise<Product> {

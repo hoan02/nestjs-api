@@ -7,20 +7,32 @@ import {
   Put,
   Delete,
   Query,
+  HttpCode,
+  HttpStatus,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
+import { CreateProductDto, UpdateProductDto } from './_dto/product.dto';
+import { ProductTableDto } from './_dto/product-table.dto';
 
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  create(@Body() createProductDto: any) {
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() createProductDto: CreateProductDto) {
     return this.productService.create(createProductDto);
   }
 
   @Get()
-  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
+  @HttpCode(HttpStatus.OK)
+  findAll(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<ProductTableDto> {
     return this.productService.findAll(page, limit);
   }
 
@@ -30,12 +42,15 @@ export class ProductController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: any) {
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @HttpCode(HttpStatus.OK)
+  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productService.update(id, updateProductDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id') id: string): Promise<void> {
     return this.productService.delete(id);
   }
 }

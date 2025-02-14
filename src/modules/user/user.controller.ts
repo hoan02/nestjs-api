@@ -12,7 +12,7 @@ import {
   UsePipes,
   ValidationPipe,
   UseGuards,
-  Request
+  Request,
 } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
 import { UserResponseDto } from '../auth/_dto/auth.dto';
@@ -20,31 +20,19 @@ import { UserService } from './user.service';
 import { UserTableDto } from './_dto/user-table.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
 
-@Controller()
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-
-  @Post('users')
+  @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
     return this.userService.create(createUserDto);
   }
 
-  @Put('user')
-  @Auth()
-  @UsePipes(new ValidationPipe({ transform: true }))
-  @HttpCode(HttpStatus.OK)
-  async updateCurrentUser(
-    @Request() req,
-    @Body() updateUserDto: UpdateUserDto
-  ): Promise<UserResponseDto> {
-    return this.userService.update(req.user.id, updateUserDto);
-  }
-
   // Admin endpoints
-  @Get('users')
+  @Get()
   @Auth('admin')
   @HttpCode(HttpStatus.OK)
   async findAll(
@@ -54,15 +42,14 @@ export class UserController {
     return this.userService.findAll(page, limit);
   }
 
-
-  @Get('users/:id')
+  @Get(':id')
   @Auth('admin')
   @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
   }
 
-  @Put('users/:id')
+  @Put(':id')
   @Auth('admin')
   @UsePipes(new ValidationPipe({ transform: true }))
   @HttpCode(HttpStatus.OK)
@@ -73,7 +60,7 @@ export class UserController {
     return this.userService.update(id, updateUserDto);
   }
 
-  @Delete('users/:id')
+  @Delete(':id')
   @Auth('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
