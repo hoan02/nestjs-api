@@ -11,8 +11,6 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
-  UseGuards,
-  Request,
 } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './_dto/user.dto';
 import { UserResponseDto } from '../auth/_dto/auth.dto';

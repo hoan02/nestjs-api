@@ -63,25 +63,6 @@ export class AuthController {
     return { message: 'Successfully logged out from all devices' };
   }
 
-  @Get('user')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async getCurrentUser(@Headers('authorization') auth: string) {
-    const token = auth?.split(' ')[1];
-    const decoded = this.jwtService.verify(token);
-    const user = await this.userService.findOne(decoded.id);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-    return {
-      message: 'Get user success',
-      result: true,
-      data: {
-        user,
-      },
-    };
-  }
-
   @Get('auth/refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(@Req() req: Request) {
@@ -92,7 +73,31 @@ export class AuthController {
     return await this.authService.refresh(refreshToken, req);
   }
 
-  @Get('auth/sessions')
+  @Get('auth/check-username')
+  @HttpCode(HttpStatus.OK)
+  async checkUsername(@Query('username') username: string) {
+    const exists = await this.userService.checkUsername(username);
+    return {
+      result: true,
+      data: {
+        exists,
+      },
+    };
+  }
+
+  @Get('auth/check-email')
+  @HttpCode(HttpStatus.OK)
+  async checkEmail(@Query('email') email: string) {
+    const exists = await this.userService.checkEmail(email);
+    return {
+      result: true,
+      data: {
+        exists,
+      },
+    };
+  }
+
+  @Get('sessions')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async getActiveSessions(@Headers('authorization') auth: string) {
@@ -103,29 +108,5 @@ export class AuthController {
       throw new UnauthorizedException('User not found');
     }
     return this.authService.getActiveSessions(user.id);
-  }
-
-  @Get('auth/check-username')
-  @HttpCode(HttpStatus.OK)
-  async checkUsername(@Query('username') username: string) {
-    const exists = await this.userService.checkUsername(username);
-    return {
-      result: true,
-      data: {
-        exists
-      }
-    };
-  }
-
-  @Get('auth/check-email') 
-  @HttpCode(HttpStatus.OK)
-  async checkEmail(@Query('email') email: string) {
-    const exists = await this.userService.checkEmail(email);
-    return {
-      result: true,
-      data: {
-        exists
-      }
-    };
   }
 }
