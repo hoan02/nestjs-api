@@ -13,7 +13,7 @@ async function bootstrap() {
   app.use(cookieParser());
   // app.useGlobalInterceptors(new DelayInterceptor());
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

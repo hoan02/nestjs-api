@@ -22,7 +22,7 @@ export class ProductService {
     const [products, total] = await Promise.all([
       this.productModel
         .find()
-        .populate('categoryId')
+        .populate('category')
         .skip(skip)
         .limit(limit)
         .exec(),
@@ -33,7 +33,13 @@ export class ProductService {
   }
 
   async findOne(id: string): Promise<Product> {
-    const product = await this.productModel.findById(id).populate('categoryId');
+    const product = await this.productModel.findById(id)
+      .populate({
+        path: 'category',
+        select: '_id name description',
+        model: 'Category'
+      });
+    console.log('Product with populated category:', product);
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
@@ -46,7 +52,7 @@ export class ProductService {
   ): Promise<Product> {
     const product = await this.productModel
       .findByIdAndUpdate(id, updateProductDto, { new: true })
-      .populate('categoryId');
+      .populate('category');
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }

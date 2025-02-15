@@ -1,4 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
+import { Category } from '../../../schemas/category';
 
 export class CreateProductDto {
   @IsNotEmpty()
@@ -14,12 +16,12 @@ export class CreateProductDto {
   price: number;
 
   @IsNotEmpty()
-  @IsNumber()
+  @IsString()
   image: string;
 
   @IsOptional()
-  @IsString()
-  categoryId?: string;
+  @Type(() => Category)
+  category?: Category;
 }
 
 export class UpdateProductDto {
@@ -40,6 +42,6 @@ export class UpdateProductDto {
   image?: number;
 
   @IsOptional()
-  @IsString()
-  categoryId?: string;
+  @Type(() => Category)
+  category?: Category;
 }
