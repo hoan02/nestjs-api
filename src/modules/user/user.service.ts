@@ -115,6 +115,10 @@ export class UserService {
     }
   }
 
+  async deleteMany(ids: string[]): Promise<void> {
+    await this.userModel.deleteMany({ _id: { $in: ids } }).exec();
+  }
+
   async checkUsername(username: string): Promise<boolean> {
     const user = await this.userModel.findOne({ username }).exec();
     return !!user;

@@ -58,6 +58,13 @@ export class UserController {
     return this.userService.update(id, updateUserDto);
   }
 
+  @Post('delete-many')
+  @Auth('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeMany(@Body() body: { ids: string[] }): Promise<void> {
+    return this.userService.deleteMany(body.ids);
+  }
+
   @Delete(':id')
   @Auth('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
